@@ -29,15 +29,16 @@ void check_error(int status)
 }
 void send_handshake()
 {
-    mkfifo("./secret", 0666);
-    int client_pid;
+    char secret_path[BUF_SIZE];
+    sprintf(secret_path, "./%d", getpid());
+    mkfifo(secret_path, 0666);
+    char wellknown[] = "./wkp";
     int status;
-    client_pid = getpid();
     int wkp, secret_pipe;
-    wkp = open("./wkp", O_WRONLY);
-    secret_pipe = open("./secret", O_RDONLY);
+    wkp = open(wellknown, O_WRONLY);
+    status = write(wkp, secret_path, 4 * strlen(secret_path));
+    secret_pipe = open(secret_path, O_RDONLY);
     // sending initial connection request to server
-    status = write(wkp, &client_pid, sizeof(client_pid));
     check_error(status);
     // receiving acknowledgement from server
     char msg[BUF_SIZE];
@@ -49,11 +50,12 @@ void send_handshake()
     check_error(status);
     close(wkp);
     close(secret_pipe);
-    remove("./secret");
+    remove(secret_path);
 }
 
 int main()
 {
+    printf("Give a word(s), and it will tell you how many vowels there are...\n");
     signal(SIGINT, sighandler);
     mkfifo("./client_pipe", 0666);
     mkfifo("./server_pipe", 0666);

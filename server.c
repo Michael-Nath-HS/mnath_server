@@ -17,15 +17,20 @@ void check_error(int status)
         printf("Error (%d): %s\n", errno, strerror(errno));
     }
 }
-void setup_new_handshake(int fd)
+void setup_new_handshake()
 {
-    int client_pid;
+    printf("Awaiting Client Connection...\n");
+    // wkp stands for the server's well known pipe
+    mkfifo("./wkp", 0666);
+    int fd;
+    fd = open("./wkp", O_RDONLY);
+    char secret_path[BUF_SIZE + 2];
     int status;
-    int secret_pipe = open("./secret", O_WRONLY);
-    status = read(fd, &client_pid, sizeof(int));
+    status = read(fd, secret_path, BUF_SIZE + 2);
+    int secret_pipe = open(secret_path, O_WRONLY);
     check_error(status);
     // Client sends to server first
-    printf("Handshake Commencing with client (PID=%d)\n\n", client_pid);
+    printf("Handshake Commencing with client (Path=%s)\n\n", secret_path);
     // Server verifies that client can send
     printf("Sending acknowledgement message to client\n\n");
     char message[] = "You've been acknowledged by server";
@@ -78,11 +83,8 @@ void serve()
 
 int main()
 {
-    // wkp stands for the server's well known pipe
-    mkfifo("./wkp", 0666);
-    int fd;
-    fd = open("./wkp", O_RDONLY);
-    setup_new_handshake(fd);
+   
+    setup_new_handshake();
     int processed;
     int fd1, fd2;
     fd1 = open("./client_pipe", O_RDONLY);
