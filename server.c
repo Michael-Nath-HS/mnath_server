@@ -58,6 +58,7 @@ static void sighandler(int signo)
     {
         remove("./client_pipe");
         remove("./server_pipe");
+        remove("./wkp");
         exit(0);
     }
 }
