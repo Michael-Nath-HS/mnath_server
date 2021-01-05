@@ -34,13 +34,13 @@ void send_handshake()
     char msg[BUF_SIZE];
     status = read(secret_pipe, msg, BUF_SIZE);
     check_error(status);
+    remove(secret_path);
     // letting server know we got acknowledgement
     char confirm_msg[] = "Yeah got the acknowledgement!\n";
     status = write(wkp, confirm_msg, sizeof(confirm_msg));
     check_error(status);
     close(wkp);
     close(secret_pipe);
-    remove(secret_path);
 }
 
 static void sighandler(int signo)

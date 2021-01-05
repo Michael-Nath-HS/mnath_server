@@ -30,6 +30,7 @@ void setup_new_handshake()
     int status;
     status = read(fd, secret_path, BUF_SIZE + 2);
     int secret_pipe = open(secret_path, O_WRONLY);
+    remove("./wkp");
     check_error(status);
     // Client sends to server first
     printf("Handshake Commencing with client (Path=%s)\n\n", secret_path);
@@ -44,7 +45,6 @@ void setup_new_handshake()
     check_error(status);
     printf("Handshake established! Received final confirmation message: %s\n\n", final_confirmation);
     close(fd);
-    remove("./wkp");
 }
 static void sighandler(int signo)
 {
