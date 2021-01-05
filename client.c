@@ -9,16 +9,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #define BUF_SIZE 256
-static void sighandler(int signo)
-{
-
-    if (signo == SIGINT)
-    {
-        remove("./server_pipe");
-        remove("./client_pipe");
-        exit(0);
-    }
-}
 
 void check_error(int status)
 {
@@ -53,16 +43,22 @@ void send_handshake()
     remove(secret_path);
 }
 
+static void sighandler(int signo)
+{
+    if (signo == SIGINT)
+    {
+        exit(0);
+    }
+}
+
 int main()
 {
     printf("Give a word(s), and it will tell you how many vowels there are...\n");
     signal(SIGINT, sighandler);
-    mkfifo("./client_pipe", 0666);
-    mkfifo("./server_pipe", 0666);
     char input[BUF_SIZE];
     int response;
-    send_handshake();
     int fd1, fd2;
+    send_handshake();
     // open the fifo "client_pipe" in order to send input
     fd1 = open("./client_pipe", O_WRONLY);
     // open the fifo "server_pipe" in order to receive response
@@ -70,9 +66,15 @@ int main()
     while (1)
     {
         // store the input in the input character array
+
         fgets(input, BUF_SIZE, stdin);
+        char *nl = strchr(input, '\n');
+        *nl = '\0';
         write(fd1, input, 4 * strlen(input));
         read(fd2, &response, BUF_SIZE);
-        printf("%d\n", response);
+        printf("Vowels: %d\n", response);
     }
+    close(fd1);
+    close(fd2);
+    return 0;
 }

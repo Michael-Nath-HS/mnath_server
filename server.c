@@ -8,6 +8,8 @@
 #include <sys/errno.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
+
 #define BUF_SIZE 256
 
 void check_error(int status)
@@ -44,6 +46,21 @@ void setup_new_handshake()
     close(fd);
     remove("./wkp");
 }
+static void sighandler(int signo)
+{
+    if (signo == SIGPIPE)
+    {
+        printf("Client disconnected. Setting up new handshake for next client...\n");
+        setup_new_handshake();
+    }
+
+    if (signo == SIGINT)
+    {
+        remove("./client_pipe");
+        remove("./server_pipe");
+        exit(0);
+    }
+}
 
 int determine_number_of_vowels(char *input)
 {
@@ -64,16 +81,16 @@ int determine_number_of_vowels(char *input)
 
 void serve()
 {
-    mkfifo("./client_pipe", 0666);
-    mkfifo("./server_pipe", 0666);
     int processed;
     int fd1, fd2;
     fd1 = open("./client_pipe", O_RDONLY);
     fd2 = open("./server_pipe", O_WRONLY);
+
     char client_input[BUF_SIZE];
     while (1)
     {
         read(fd1, client_input, BUF_SIZE);
+        printf("getting number of vowels for \"%s\"...\n", client_input);
         processed = determine_number_of_vowels(client_input);
         write(fd2, &processed, sizeof(processed));
     }
@@ -83,21 +100,14 @@ void serve()
 
 int main()
 {
-   
+    mkfifo("./client_pipe", 0666);
+    mkfifo("./server_pipe", 0666);
+    signal(SIGPIPE, sighandler);
+    signal(SIGINT, sighandler);
     setup_new_handshake();
     int processed;
     int fd1, fd2;
-    fd1 = open("./client_pipe", O_RDONLY);
-    fd2 = open("./server_pipe", O_WRONLY);
-    char client_input[BUF_SIZE];
-    while (1)
-    {
-        read(fd1, client_input, BUF_SIZE);
-        processed = determine_number_of_vowels(client_input);
-        write(fd2, &processed, sizeof(processed));
-    }
-    close(fd1);
-    close(fd2);
+    serve();
     remove("./client_pipe");
     remove("./server_pipe");
     return 0;
